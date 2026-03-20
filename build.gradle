@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+}
+
+repositories {
+    maven {
+        url = 'https://repo.runelite.net'
+    }
+    mavenCentral()
+}
+
+def runeLiteVersion = 'latest.release'
+
+dependencies {
+    compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+    compileOnly 'org.projectlombok:lombok:1.18.+'
+    annotationProcessor 'org.projectlombok:lombok:1.18.+'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:3.+'
+}
+
+group = 'com.inventoryrestore'
+version = '1.0-SNAPSHOT'
+description = 'Displays HP and prayer restore values on inventory items'
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+checkstyle {
+    maxWarnings = 0
+    toolVersion = '8.45.1'
+    showViolations = true
+    ignoreFailures = false
+}
