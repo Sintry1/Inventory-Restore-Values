@@ -99,11 +99,23 @@ public interface InventoryRestoreConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showCombinedHeal",
+		name = "Show Combined Heal",
+		description = "For two-part food (e.g. hunter meats), show the total heal (instant + delayed) instead of 'instant/delayed'",
+		section = foodSection,
+		position = 1
+	)
+	default boolean showCombinedHeal()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "enableMinHpThreshold",
 		name = "Minimum HP Threshold",
 		description = "Only show the HP overlay on food that heals at least this much HP",
 		section = foodSection,
-		position = 1
+		position = 2
 	)
 	default boolean enableMinHpThreshold()
 	{
@@ -115,7 +127,7 @@ public interface InventoryRestoreConfig extends Config
 		name = "Minimum HP to Show",
 		description = "Food healing below this value will not show an overlay (requires threshold toggle)",
 		section = foodSection,
-		position = 2
+		position = 3
 	)
 	@Range(min = 1, max = 30)
 	default int minHpThreshold()
