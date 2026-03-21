@@ -94,13 +94,14 @@ public class InventoryRestoreOverlay extends Overlay
 
 			if (config.firstItemOnly())
 			{
+				int groupId = RestoreItemDatabase.getGroupId(item.getItemId());
 				if (showHp)
 				{
-					showHp = seenHpItems.add(item.getItemId());
+					showHp = seenHpItems.add(groupId);
 				}
 				if (showPrayer)
 				{
-					showPrayer = seenPrayerItems.add(item.getItemId());
+					showPrayer = seenPrayerItems.add(groupId);
 				}
 			}
 
@@ -166,6 +167,9 @@ public class InventoryRestoreOverlay extends Overlay
 			return;
 		}
 
+		Color hpColor = resolveHpColor(restoreItem);
+		Color prayerColor = resolvePrayerColor(restoreItem);
+
 		int lineHeight = fm.getHeight();
 
 		if (hpText != null && prayerText != null)
@@ -177,24 +181,74 @@ public class InventoryRestoreOverlay extends Overlay
 
 			if (isTopPosition)
 			{
-				drawText(graphics, fm, bounds, hpText, config.hpColor(), 0);
-				drawText(graphics, fm, bounds, prayerText, config.prayerColor(), lineHeight);
+				drawText(graphics, fm, bounds, hpText, hpColor, 0);
+				drawText(graphics, fm, bounds, prayerText, prayerColor, lineHeight);
 			}
 			else
 			{
 				// Bottom / center: prayer text is the lower line (larger offset)
-				drawText(graphics, fm, bounds, prayerText, config.prayerColor(), 0);
-				drawText(graphics, fm, bounds, hpText, config.hpColor(), lineHeight);
+				drawText(graphics, fm, bounds, prayerText, prayerColor, 0);
+				drawText(graphics, fm, bounds, hpText, hpColor, lineHeight);
 			}
 		}
 		else if (hpText != null)
 		{
-			drawText(graphics, fm, bounds, hpText, config.hpColor(), 0);
+			drawText(graphics, fm, bounds, hpText, hpColor, 0);
 		}
 		else
 		{
-			drawText(graphics, fm, bounds, prayerText, config.prayerColor(), 0);
+			drawText(graphics, fm, bounds, prayerText, prayerColor, 0);
 		}
+	}
+
+	/**
+	 * Returns {@link Color#RED} if consuming the item would exceed the effective HP cap,
+	 * otherwise returns the configured HP colour.
+	 *
+	 * <p>For items that can overheal (Anglerfish, Saradomin brew) the effective cap is
+	 * {@code realHp + healAmount}; for all other food it is simply {@code realHp}.
+	 * Two-part food uses the combined instant + delayed heal for this check.
+	 */
+	private Color resolveHpColor(RestoreItem restoreItem)
+	{
+		if (!restoreItem.hasInstantHp())
+		{
+			return config.hpColor();
+		}
+
+		int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
+		int realHp = client.getRealSkillLevel(Skill.HITPOINTS);
+		int heal = computeHp(restoreItem);
+
+		if (restoreItem.hasDelayedHeal())
+		{
+			heal += restoreItem.getDelayedHp();
+		}
+
+		// Overheal items boost above real level; their cap is realHp + heal.
+		// For all other food the cap is just realHp.
+		int effectiveMax = restoreItem.getDynamicHpType() != null ? realHp + heal : realHp;
+
+		return currentHp + heal > effectiveMax ? Color.RED : config.hpColor();
+	}
+
+	/**
+	 * Returns {@link Color#RED} if consuming the item would exceed max prayer,
+	 * otherwise returns the configured prayer colour.
+	 * Prayer regen potions are excluded (their restore is gradual, not instant).
+	 */
+	private Color resolvePrayerColor(RestoreItem restoreItem)
+	{
+		if (!restoreItem.hasPrayerRestore() || restoreItem.isPrayerRegen())
+		{
+			return config.prayerColor();
+		}
+
+		int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
+		int realPrayer = client.getRealSkillLevel(Skill.PRAYER);
+		int restore = computePrayer(restoreItem);
+
+		return currentPrayer + restore > realPrayer ? Color.RED : config.prayerColor();
 	}
 
 	/**

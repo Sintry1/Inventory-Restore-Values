@@ -18,6 +18,13 @@ public final class RestoreItemDatabase
 {
 	private static final Map<Integer, RestoreItem> DATABASE = new HashMap<>();
 
+	/**
+	 * Maps partial/half item IDs to the canonical full-item ID for the same food type.
+	 * Used so that first-item-only mode treats e.g. "half botanical pie" and
+	 * "botanical pie (full)" as the same item.
+	 */
+	private static final Map<Integer, Integer> GROUP_IDS = new HashMap<>();
+
 	static
 	{
 		// ==================================================================
@@ -218,6 +225,81 @@ public final class RestoreItemDatabase
 
 		// Marlin (Trouble Brewing minigame) — TODO: verify ID
 		// put(7805, RestoreItem.food(24)); // Marlin
+
+		// ==================================================================
+		// ITEM GROUPS — maps partial/half variants to the full item's ID
+		// so that first-item-only mode treats them as the same food type.
+		// ==================================================================
+
+		// Prayer potion doses
+		GROUP_IDS.put(139,  2434); // Prayer potion(3) → (4)
+		GROUP_IDS.put(141,  2434); // Prayer potion(2) → (4)
+		GROUP_IDS.put(143,  2434); // Prayer potion(1) → (4)
+
+		// Super restore doses
+		GROUP_IDS.put(3026, 3024); // Super restore(3) → (4)
+		GROUP_IDS.put(3028, 3024); // Super restore(2) → (4)
+		GROUP_IDS.put(3030, 3024); // Super restore(1) → (4)
+
+		// Sanfew serum doses
+		GROUP_IDS.put(10927, 10925); // Sanfew serum(3) → (4)
+		GROUP_IDS.put(10929, 10925); // Sanfew serum(2) → (4)
+		GROUP_IDS.put(10931, 10925); // Sanfew serum(1) → (4)
+
+		// Ancient brew doses
+		GROUP_IDS.put(26342, 26340); // Ancient brew(3) → (4)
+		GROUP_IDS.put(26344, 26340); // Ancient brew(2) → (4)
+		GROUP_IDS.put(26346, 26340); // Ancient brew(1) → (4)
+
+		// Forgotten brew doses
+		GROUP_IDS.put(27632, 27629); // Forgotten brew(3) → (4)
+		GROUP_IDS.put(27635, 27629); // Forgotten brew(2) → (4)
+		GROUP_IDS.put(27638, 27629); // Forgotten brew(1) → (4)
+
+		// Blighted super restore doses
+		GROUP_IDS.put(24601, 24598); // Blighted super restore(3) → (4)
+		GROUP_IDS.put(24603, 24598); // Blighted super restore(2) → (4)
+		GROUP_IDS.put(24605, 24598); // Blighted super restore(1) → (4)
+
+		// Prayer regeneration potion doses
+		GROUP_IDS.put(30128, 30125); // Prayer regeneration potion(3) → (4)
+		GROUP_IDS.put(30131, 30125); // Prayer regeneration potion(2) → (4)
+		GROUP_IDS.put(30134, 30125); // Prayer regeneration potion(1) → (4)
+
+		// Saradomin brew doses
+		GROUP_IDS.put(6687, 6685); // Saradomin brew(3) → (4)
+		GROUP_IDS.put(6689, 6685); // Saradomin brew(2) → (4)
+		GROUP_IDS.put(6691, 6685); // Saradomin brew(1) → (4)
+
+		// Guthix rest doses
+		GROUP_IDS.put(4419, 4417); // Guthix rest(3) → (4)
+		GROUP_IDS.put(4421, 4417); // Guthix rest(2) → (4)
+		GROUP_IDS.put(4423, 4417); // Guthix rest(1) → (4)
+
+		// Pizzas
+		GROUP_IDS.put(2291, 2289); // Half plain pizza     → Plain pizza (full)
+		GROUP_IDS.put(2295, 2293); // Half meat pizza      → Meat pizza (full)
+		GROUP_IDS.put(2299, 2297); // Half anchovy pizza   → Anchovy pizza (full)
+		GROUP_IDS.put(2303, 2301); // Half pineapple pizza → Pineapple pizza (full)
+
+		// Pies
+		GROUP_IDS.put(2333, 2325);  // Half redberry pie    → Redberry pie (full)
+		GROUP_IDS.put(2315, 2327);  // Half meat pie        → Meat pie (full)
+		GROUP_IDS.put(2317, 2335);  // Half apple pie       → Apple pie (full)
+		GROUP_IDS.put(7180, 7178);  // Half garden pie      → Garden pie (full)
+		GROUP_IDS.put(7190, 7188);  // Half fish pie        → Fish pie (full)
+		GROUP_IDS.put(7200, 7198);  // Half admiral pie     → Admiral pie (full)
+		GROUP_IDS.put(7210, 7208);  // Half wild pie        → Wild pie (full)
+		GROUP_IDS.put(7220, 7218);  // Half summer pie      → Summer pie (full)
+		GROUP_IDS.put(21690, 21687); // Half mushroom pie   → Mushroom pie (full)
+		GROUP_IDS.put(22795, 22794); // Half botanical pie  → Botanical pie (full)
+		GROUP_IDS.put(22793, 22791); // Half dragonfruit pie → Dragonfruit pie (full)
+
+		// Cakes (3 slices each)
+		GROUP_IDS.put(1893, 1891); // Cake (2/3)            → Cake (full)
+		GROUP_IDS.put(1895, 1891); // Cake (1/3)            → Cake (full)
+		GROUP_IDS.put(1899, 1897); // Chocolate slice (2/3) → Chocolate cake (full)
+		GROUP_IDS.put(1901, 1897); // Chocolate slice (1/3) → Chocolate cake (full)
 	}
 
 	private static void put(int itemId, RestoreItem item)
@@ -233,6 +315,17 @@ public final class RestoreItemDatabase
 	public static RestoreItem get(int itemId)
 	{
 		return DATABASE.get(itemId);
+	}
+
+	/**
+	 * Returns the canonical group ID for the given item ID.
+	 * Half/partial variants of pies, pizzas, and cakes return the full item's ID
+	 * so that first-item-only mode treats them as the same food type.
+	 * Items with no group mapping return their own ID.
+	 */
+	public static int getGroupId(int itemId)
+	{
+		return GROUP_IDS.getOrDefault(itemId, itemId);
 	}
 
 	private RestoreItemDatabase()
