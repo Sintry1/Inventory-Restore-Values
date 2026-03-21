@@ -130,8 +130,15 @@ public class InventoryRestoreOverlay extends Overlay
 			{
 				if (restoreItem.hasDelayedHeal())
 				{
-					// Two-part food (hunter meats): show "instant/delayed"
-					hpText = hp + "/" + restoreItem.getDelayedHp();
+					if (config.showCombinedHeal())
+					{
+						hpText = String.valueOf(hp + restoreItem.getDelayedHp());
+					}
+					else
+					{
+						// Two-part food (hunter meats): show "instant/delayed"
+						hpText = hp + "/" + restoreItem.getDelayedHp();
+					}
 				}
 				else
 				{
