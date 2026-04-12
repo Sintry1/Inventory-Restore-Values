@@ -135,6 +135,30 @@ public interface InventoryRestoreConfig extends Config
 		return 10;
 	}
 
+	@ConfigItem(
+		keyName = "firstHpItemOnly",
+		name = "First Item Only",
+		description = "Only show the HP overlay on the first HP-restoring item of each type in the inventory (left to right, top to bottom)",
+		section = foodSection,
+		position = 4
+	)
+	default boolean firstHpItemOnly()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "lastHpItemOnly",
+		name = "Last Item Only",
+		description = "Only show the HP overlay on the last HP-restoring item of each type in the inventory (left to right, top to bottom)",
+		section = foodSection,
+		position = 5
+	)
+	default boolean lastHpItemOnly()
+	{
+		return false;
+	}
+
 	// -------------------------------------------------------------------------
 	// Prayer section
 	// -------------------------------------------------------------------------
@@ -158,25 +182,26 @@ public interface InventoryRestoreConfig extends Config
 		return true;
 	}
 
-	// -------------------------------------------------------------------------
-	// General section
-	// -------------------------------------------------------------------------
-
-	@ConfigSection(
-		name = "General",
-		description = "General display options",
-		position = 3
+	@ConfigItem(
+		keyName = "firstPrayerItemOnly",
+		name = "First Item Only",
+		description = "Only show the prayer overlay on the first prayer-restoring item of each type in the inventory (left to right, top to bottom)",
+		section = prayerSection,
+		position = 1
 	)
-	String generalSection = "general";
+	default boolean firstPrayerItemOnly()
+	{
+		return false;
+	}
 
 	@ConfigItem(
-		keyName = "firstItemOnly",
-		name = "First Item Only",
-		description = "Only show the overlay on the first HP-restoring and first prayer-restoring item in the inventory (left to right, top to bottom)",
-		section = generalSection,
-		position = 0
+		keyName = "lastPrayerItemOnly",
+		name = "Last Item Only",
+		description = "Only show the prayer overlay on the last prayer-restoring item of each type in the inventory (left to right, top to bottom)",
+		section = prayerSection,
+		position = 2
 	)
-	default boolean firstItemOnly()
+	default boolean lastPrayerItemOnly()
 	{
 		return false;
 	}

@@ -9,6 +9,10 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Skill;
@@ -66,12 +70,46 @@ public class InventoryRestoreOverlay extends Overlay
 		graphics.setFont(font);
 		FontMetrics fm = graphics.getFontMetrics();
 
-		// Tracks item IDs already rendered in first-item-only mode
-		final java.util.Set<Integer> seenHpItems = new java.util.HashSet<>();
-		final java.util.Set<Integer> seenPrayerItems = new java.util.HashSet<>();
-
-		for (Widget item : children)
+		// Pre-scan for last-item-only mode: find the last widget index for each group ID
+		final Map<Integer, Integer> lastHpIndex = new HashMap<>();
+		final Map<Integer, Integer> lastPrayerIndex = new HashMap<>();
+		if (config.lastHpItemOnly() || config.lastPrayerItemOnly())
 		{
+			for (int i = 0; i < children.length; i++)
+			{
+				Widget item = children[i];
+				if (item.isHidden() || item.getItemId() <= 0)
+				{
+					continue;
+				}
+				if (itemManager.getItemComposition(item.getItemId()).getNote() != -1)
+				{
+					continue;
+				}
+				RestoreItem restoreItem = RestoreItemDatabase.get(item.getItemId());
+				if (restoreItem == null)
+				{
+					continue;
+				}
+				int groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+				if (config.showHpOverlay() && config.lastHpItemOnly() && restoreItem.hasInstantHp())
+				{
+					lastHpIndex.put(groupId, i);
+				}
+				if (config.showPrayerOverlay() && config.lastPrayerItemOnly() && restoreItem.hasPrayerRestore())
+				{
+					lastPrayerIndex.put(groupId, i);
+				}
+			}
+		}
+
+		// Tracks item IDs already rendered in first-item-only mode
+		final Set<Integer> seenHpItems = new HashSet<>();
+		final Set<Integer> seenPrayerItems = new HashSet<>();
+
+		for (int i = 0; i < children.length; i++)
+		{
+			Widget item = children[i];
 			if (item.isHidden() || item.getItemId() <= 0)
 			{
 				continue;
@@ -92,16 +130,39 @@ public class InventoryRestoreOverlay extends Overlay
 			boolean showHp = config.showHpOverlay();
 			boolean showPrayer = config.showPrayerOverlay();
 
-			if (config.firstItemOnly())
+			if (showHp || showPrayer)
 			{
-				int groupId = RestoreItemDatabase.getGroupId(item.getItemId());
-				if (showHp)
+				int groupId = -1; // lazily resolved below
+
+				if (config.firstHpItemOnly() && showHp)
 				{
+					groupId = RestoreItemDatabase.getGroupId(item.getItemId());
 					showHp = seenHpItems.add(groupId);
 				}
-				if (showPrayer)
+				if (config.firstPrayerItemOnly() && showPrayer)
 				{
+					if (groupId == -1)
+					{
+						groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+					}
 					showPrayer = seenPrayerItems.add(groupId);
+				}
+
+				if (config.lastHpItemOnly() && showHp)
+				{
+					if (groupId == -1)
+					{
+						groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+					}
+					showHp = lastHpIndex.getOrDefault(groupId, -1) == i;
+				}
+				if (config.lastPrayerItemOnly() && showPrayer)
+				{
+					if (groupId == -1)
+					{
+						groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+					}
+					showPrayer = lastPrayerIndex.getOrDefault(groupId, -1) == i;
 				}
 			}
 
@@ -156,9 +217,22 @@ public class InventoryRestoreOverlay extends Overlay
 				// Prayer Regen Potion: show restore amount / tick interval
 				prayerText = "1/12t";
 			}
+			else if (restoreItem.getPrayerRestoreType() != null)
+			{
+				int prayerRestore = computePrayer(restoreItem);
+				if (prayerRestore > 0)
+				{
+					prayerText = String.valueOf(prayerRestore);
+				}
+			}
 			else
 			{
-				prayerText = String.valueOf(computePrayer(restoreItem));
+				// Flat prayer restore (not formula-based, e.g. Jangerberries, Moonlight Moth)
+				int flatPrayer = restoreItem.getFlatPrayerRestore();
+				if (flatPrayer > 0)
+				{
+					prayerText = String.valueOf(flatPrayer);
+				}
 			}
 		}
 
@@ -170,34 +244,19 @@ public class InventoryRestoreOverlay extends Overlay
 		Color hpColor = resolveHpColor(restoreItem);
 		Color prayerColor = resolvePrayerColor(restoreItem);
 
-		int lineHeight = fm.getHeight();
-
 		if (hpText != null && prayerText != null)
 		{
-			// Stack both values: for bottom positions, HP is on top (smaller offset);
-			// for top positions the vertical offset pushes prayer below HP.
-			boolean isTopPosition = config.overlayPosition() == OverlayTextPosition.TOP_LEFT
-				|| config.overlayPosition() == OverlayTextPosition.TOP_RIGHT;
-
-			if (isTopPosition)
-			{
-				drawText(graphics, fm, bounds, hpText, hpColor, 0);
-				drawText(graphics, fm, bounds, prayerText, prayerColor, lineHeight);
-			}
-			else
-			{
-				// Bottom / center: prayer text is the lower line (larger offset)
-				drawText(graphics, fm, bounds, prayerText, prayerColor, 0);
-				drawText(graphics, fm, bounds, hpText, hpColor, lineHeight);
-			}
+			// Show as "HP/Prayer" on a single line with individually-coloured values.
+			// Each value turns red independently when consuming would exceed its cap.
+			drawSplitText(graphics, fm, bounds, hpText, hpColor, prayerText, prayerColor);
 		}
 		else if (hpText != null)
 		{
-			drawText(graphics, fm, bounds, hpText, hpColor, 0);
+			drawText(graphics, fm, bounds, hpText, hpColor);
 		}
 		else
 		{
-			drawText(graphics, fm, bounds, prayerText, prayerColor, 0);
+			drawText(graphics, fm, bounds, prayerText, prayerColor);
 		}
 	}
 
@@ -246,19 +305,18 @@ public class InventoryRestoreOverlay extends Overlay
 
 		int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
 		int realPrayer = client.getRealSkillLevel(Skill.PRAYER);
-		int restore = computePrayer(restoreItem);
+		int restore = restoreItem.getPrayerRestoreType() != null
+			? computePrayer(restoreItem)
+			: restoreItem.getFlatPrayerRestore();
 
 		return currentPrayer + restore > realPrayer ? Color.RED : config.prayerColor();
 	}
 
 	/**
 	 * Draws text at the configured position inside the item's bounding box.
-	 *
-	 * @param verticalOffset extra pixels to shift the text away from the anchor edge,
-	 *                       used to stack two lines without them overlapping.
 	 */
 	private void drawText(Graphics2D graphics, FontMetrics fm, Rectangle bounds,
-		String text, Color color, int verticalOffset)
+		String text, Color color)
 	{
 		int textWidth = fm.stringWidth(text);
 		int ascent = fm.getAscent();
@@ -270,24 +328,24 @@ public class InventoryRestoreOverlay extends Overlay
 		{
 			case TOP_LEFT:
 				x = bounds.x + 1;
-				y = bounds.y + ascent + verticalOffset;
+				y = bounds.y + ascent;
 				break;
 			case TOP_RIGHT:
 				x = bounds.x + bounds.width - textWidth - 1;
-				y = bounds.y + ascent + verticalOffset;
+				y = bounds.y + ascent;
 				break;
 			case BOTTOM_LEFT:
 				x = bounds.x + 1;
-				y = bounds.y + bounds.height - 2 - verticalOffset;
+				y = bounds.y + bounds.height - 2;
 				break;
 			case BOTTOM_RIGHT:
 				x = bounds.x + bounds.width - textWidth - 1;
-				y = bounds.y + bounds.height - 2 - verticalOffset;
+				y = bounds.y + bounds.height - 2;
 				break;
 			case CENTER:
 			default:
 				x = bounds.x + (bounds.width - textWidth) / 2;
-				y = bounds.y + (bounds.height + ascent) / 2 + verticalOffset;
+				y = bounds.y + (bounds.height + ascent) / 2;
 				break;
 		}
 
@@ -297,6 +355,63 @@ public class InventoryRestoreOverlay extends Overlay
 
 		graphics.setColor(color);
 		graphics.drawString(text, x, y);
+	}
+
+	/**
+	 * Draws two values separated by "/" on a single line, each in its own colour.
+	 * Used for combo items (e.g. herblore mixes) that restore both HP and prayer.
+	 * The full "left/right" string is positioned according to the configured text position.
+	 */
+	private void drawSplitText(Graphics2D graphics, FontMetrics fm, Rectangle bounds,
+		String leftText, Color leftColor, String rightText, Color rightColor)
+	{
+		final String sep = "/";
+		int leftWidth = fm.stringWidth(leftText);
+		int sepWidth = fm.stringWidth(sep);
+		int totalWidth = leftWidth + sepWidth + fm.stringWidth(rightText);
+		int ascent = fm.getAscent();
+
+		int x;
+		int y;
+
+		switch (config.overlayPosition())
+		{
+			case TOP_LEFT:
+				x = bounds.x + 1;
+				y = bounds.y + ascent;
+				break;
+			case TOP_RIGHT:
+				x = bounds.x + bounds.width - totalWidth - 1;
+				y = bounds.y + ascent;
+				break;
+			case BOTTOM_LEFT:
+				x = bounds.x + 1;
+				y = bounds.y + bounds.height - 2;
+				break;
+			case BOTTOM_RIGHT:
+				x = bounds.x + bounds.width - totalWidth - 1;
+				y = bounds.y + bounds.height - 2;
+				break;
+			case CENTER:
+			default:
+				x = bounds.x + (bounds.width - totalWidth) / 2;
+				y = bounds.y + (bounds.height + ascent) / 2;
+				break;
+		}
+
+		// Drop shadows for all three segments
+		graphics.setColor(Color.BLACK);
+		graphics.drawString(leftText, x + 1, y + 1);
+		graphics.drawString(sep, x + leftWidth + 1, y + 1);
+		graphics.drawString(rightText, x + leftWidth + sepWidth + 1, y + 1);
+
+		// Coloured segments
+		graphics.setColor(leftColor);
+		graphics.drawString(leftText, x, y);
+		graphics.setColor(Color.LIGHT_GRAY);
+		graphics.drawString(sep, x + leftWidth, y);
+		graphics.setColor(rightColor);
+		graphics.drawString(rightText, x + leftWidth + sepWidth, y);
 	}
 
 	// ------------------------------------------------------------------
@@ -317,6 +432,54 @@ public class InventoryRestoreOverlay extends Overlay
 			// floor(hp * 15 / 100) + 2
 			return (hp * 15 / 100) + 2;
 		}
+		// Chambers of Xeric — Xeric's aid tiers
+		// Strong formula sourced from RuneLite itemstats; weak/regular are estimates.
+		if (item.getDynamicHpType() == DynamicHpType.XERIC_AID_WEAK)
+		{
+			int hp = client.getRealSkillLevel(Skill.HITPOINTS);
+			// Formula sourced from OSRS wiki: floor(hp * 5 / 100) + 1
+			return (hp * 5 / 100) + 1;
+		}
+		if (item.getDynamicHpType() == DynamicHpType.XERIC_AID)
+		{
+			int hp = client.getRealSkillLevel(Skill.HITPOINTS);
+			// Formula sourced from OSRS wiki: floor(hp * 10 / 100) + 2
+			return (hp * 10 / 100) + 2;
+		}
+		if (item.getDynamicHpType() == DynamicHpType.XERIC_AID_STRONG)
+		{
+			int hp = client.getRealSkillLevel(Skill.HITPOINTS);
+			// Sourced from RuneLite itemstats: SaradominBrew(0.15, …, 5, …)
+			return (hp * 15 / 100) + 5;
+		}
+		// Tombs of Amascut — Nectar
+		if (item.getDynamicHpType() == DynamicHpType.NECTAR)
+		{
+			int hp = client.getRealSkillLevel(Skill.HITPOINTS);
+			// Sourced from RuneLite itemstats: perc(.15, 3)
+			return (hp * 15 / 100) + 3;
+		}
+		// Moons of Peril
+		if (item.getDynamicHpType() == DynamicHpType.COOKED_BREAM)
+		{
+			int cooking = client.getBoostedSkillLevel(Skill.COOKING);
+			int fishing = client.getBoostedSkillLevel(Skill.FISHING);
+			return Math.max(7, Math.min(cooking / 3, fishing / 3));
+		}
+		if (item.getDynamicHpType() == DynamicHpType.COOKED_MOSS_LIZARD)
+		{
+			int cooking = client.getBoostedSkillLevel(Skill.COOKING);
+			int hunter = client.getBoostedSkillLevel(Skill.HUNTER);
+			return Math.min(cooking / 3, hunter / 2);
+		}
+		// Varlamore — Haddock
+		if (item.getDynamicHpType() == DynamicHpType.HADDOCK)
+		{
+			int hp = client.getRealSkillLevel(Skill.HITPOINTS);
+			// Formula: min(18, floor(hp * 20 / 100))
+			return Math.min(18, hp * 20 / 100);
+		}
+		// FIXED_OVERHEAL falls through: instantHp holds the fixed amount.
 		return item.getInstantHp();
 	}
 
@@ -334,6 +497,11 @@ public class InventoryRestoreOverlay extends Overlay
 	 */
 	private int computePrayer(RestoreItem item)
 	{
+		if (item.getPrayerRestoreType() == null)
+		{
+			return 0;
+		}
+
 		int prayer = client.getRealSkillLevel(Skill.PRAYER);
 		boolean bonus = plugin.hasPrayerBonus();
 
@@ -348,6 +516,23 @@ public class InventoryRestoreOverlay extends Overlay
 			case ANCIENT_BREW:
 				// Ancient Brew and Forgotten Brew are not affected by the wrench bonus
 				return prayer / 10 + 2;
+			case REVITALISATION_STRONG:
+				// Revitalisation potion (+) — sourced from RuneLite itemstats: SuperRestore(.30, 11)
+				return prayer * (bonus ? 32 : 30) / 100 + 11;
+			case TEARS_OF_ELIDINIS:
+				// Tears of Elidinis — sourced from RuneLite itemstats: perc(.25, 10)
+				return prayer * (bonus ? 27 : 25) / 100 + 10;
+			case MOONLIGHT_POTION:
+			{
+				// Moonlight Potion — sourced from RuneLite itemstats (MoonlightPotion.java)
+				// Formula: floor(max(prayer * 0.25, herblore * 0.3)) + 7, requires Herblore >= 38
+				// Not affected by Holy Wrench / Ring of the Gods (i)
+				int herb = client.getBoostedSkillLevel(Skill.HERBLORE);
+				return herb < 38 ? 0 : (int) Math.max(prayer * 0.25, herb * 0.3) + 7;
+			}
+			case PRAYER_REGEN:
+				// Handled upstream via isPrayerRegen() / infobox; no instant restore to compute
+				return 0;
 			default:
 				return 0;
 		}
