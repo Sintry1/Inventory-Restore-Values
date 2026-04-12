@@ -54,9 +54,4 @@ public class DelayedHealInfoBox extends InfoBox
 		}
 		return ticksRemaining <= 0;
 	}
-
-	public int getHealAmount()
-	{
-		return healAmount;
-	}
 }

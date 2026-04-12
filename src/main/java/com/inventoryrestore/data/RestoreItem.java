@@ -34,6 +34,13 @@ public class RestoreItem
 	@Nullable
 	DynamicHpType dynamicHpType;
 
+	/**
+	 * Fixed prayer points restored instantly (0 = none).
+	 * Used for items like Jangerberries that restore a flat prayer amount
+	 * not derived from the player's prayer level.
+	 */
+	int flatPrayerRestore;
+
 	// ------------------------------------------------------------------
 	// Convenience factories
 	// ------------------------------------------------------------------
@@ -72,6 +79,27 @@ public class RestoreItem
 		return RestoreItem.builder().prayerRestoreType(PrayerRestoreType.PRAYER_REGEN).build();
 	}
 
+	/**
+	 * Combo item: fixed HP heal + formula-based prayer restore (e.g. herblore mixes).
+	 * The prayer text and HP text are displayed side-by-side with individual colours.
+	 */
+	public static RestoreItem comboItem(int hp, PrayerRestoreType prayerType)
+	{
+		return RestoreItem.builder().instantHp(hp).prayerRestoreType(prayerType).build();
+	}
+
+	/** Item that restores HP and also gives a flat prayer restore not based on level. */
+	public static RestoreItem foodWithFlatPrayer(int hp, int flatPrayer)
+	{
+		return RestoreItem.builder().instantHp(hp).flatPrayerRestore(flatPrayer).build();
+	}
+
+	/** Item that gives only a flat prayer restore with no HP component (e.g. Moonlight Moth jar). */
+	public static RestoreItem flatPrayer(int flatPrayer)
+	{
+		return RestoreItem.builder().flatPrayerRestore(flatPrayer).build();
+	}
+
 	// ------------------------------------------------------------------
 	// Helpers
 	// ------------------------------------------------------------------
@@ -88,7 +116,7 @@ public class RestoreItem
 
 	public boolean hasPrayerRestore()
 	{
-		return prayerRestoreType != null;
+		return prayerRestoreType != null || flatPrayerRestore > 0;
 	}
 
 	public boolean isPrayerRegen()

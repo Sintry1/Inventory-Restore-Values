@@ -20,5 +20,37 @@ public enum PrayerRestoreType
 	ANCIENT_BREW,
 
 	/** 1 point every 12 ticks (7.2 s) – overlay shows "1/12t", tracked via infobox */
-	PRAYER_REGEN
+	PRAYER_REGEN,
+
+	// ------------------------------------------------------------------
+	// Chambers of Xeric — Revitalisation potion
+	// All three tier formulas are sourced from RuneLite itemstats and the OSRS wiki.
+	// ------------------------------------------------------------------
+
+	/**
+	 * Revitalisation potion (+): floor(prayer * 0.30) + 11, boosted by wrench/ring.
+	 * Formula sourced from RuneLite itemstats (SuperRestore(.30, 11)).
+	 */
+	REVITALISATION_STRONG,
+
+	// ------------------------------------------------------------------
+	// Tombs of Amascut
+	// ------------------------------------------------------------------
+
+	/**
+	 * Tears of Elidinis: floor(prayer * 0.25) + 10, boosted by wrench/ring.
+	 * Formula sourced from RuneLite itemstats (perc(.25, 10)).
+	 */
+	TEARS_OF_ELIDINIS,
+
+	// ------------------------------------------------------------------
+	// Moons of Peril
+	// ------------------------------------------------------------------
+
+	/**
+	 * Moonlight Potion: floor(max(prayer * 0.25, herblore * 0.3)) + 7.
+	 * Requires Herblore level 38. NOT boosted by Holy Wrench / Ring of the Gods (i).
+	 * Formula sourced from RuneLite itemstats (MoonlightPotion.java).
+	 */
+	MOONLIGHT_POTION
 }

@@ -5,7 +5,6 @@ import com.inventoryrestore.data.RestoreItem;
 import com.inventoryrestore.data.RestoreItemDatabase;
 import java.awt.image.BufferedImage;
 import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
@@ -21,7 +20,6 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
-@Slf4j
 @PluginDescriptor(
 	name = "Inventory Restore Values",
 	description = "Shows HP and prayer restore amounts on inventory item icons",
@@ -42,9 +40,9 @@ public class InventoryRestorePlugin extends Plugin
 	private static final int RING_OF_THE_GODS_I_SW = 25252;
 	private static final int RING_OF_THE_GODS_I_EA = 26764;
 
-	// TODO: confirm Prayer cape (9675) and Prayer cape(t) (9677) IDs before enabling
-	// private static final int PRAYER_CAPE   = 9675;
-	// private static final int PRAYER_CAPE_T = 9677;
+	// Prayer cape and trimmed variant (worn in cape slot)
+	private static final int PRAYER_CAPE = 9675;
+	private static final int PRAYER_CAPE_T = 9677;
 
 	// ------------------------------------------------------------------
 	// Injected services
@@ -108,6 +106,7 @@ public class InventoryRestorePlugin extends Plugin
 	 * Capture which item the player intends to eat or drink before the inventory
 	 * change fires. This is more reliable than diffing inventory states.
 	 */
+	@SuppressWarnings("unused")
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
@@ -119,6 +118,7 @@ public class InventoryRestorePlugin extends Plugin
 	}
 
 	/** Confirm consumption once the inventory changes, and start any timers. */
+	@SuppressWarnings({"unused", "deprecation"})
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
@@ -161,6 +161,7 @@ public class InventoryRestorePlugin extends Plugin
 	}
 
 	/** Tick down active timers every game tick. */
+	@SuppressWarnings("unused")
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
@@ -241,6 +242,7 @@ public class InventoryRestorePlugin extends Plugin
 	 * <ul>
 	 *   <li>Holy Wrench in inventory</li>
 	 *   <li>Ring of the Gods (i) worn (any of the three imbuing variants)</li>
+	 *   <li>Prayer cape or Prayer cape(t) worn</li>
 	 * </ul>
 	 *
 	 * <p>These items all provide the <em>same</em> bonus and do NOT stack.
@@ -250,39 +252,32 @@ public class InventoryRestorePlugin extends Plugin
 	 * and the sanfew serum multiplier from 30% → 32%.
 	 * Ancient brew and Prayer Regen Potion are NOT affected.
 	 */
+	@SuppressWarnings("deprecation")
 	public boolean hasPrayerBonus()
 	{
-		if (hasItemInInventory(HOLY_WRENCH))
+		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+		if (inventory != null)
 		{
-			return true;
+			for (Item item : inventory.getItems())
+			{
+				if (item.getId() == HOLY_WRENCH)
+				{
+					return true;
+				}
+			}
 		}
 		return hasItemEquipped(RING_OF_THE_GODS_I_NMZ)
 			|| hasItemEquipped(RING_OF_THE_GODS_I_SW)
-			|| hasItemEquipped(RING_OF_THE_GODS_I_EA);
-		// TODO: add Prayer cape IDs once confirmed
+			|| hasItemEquipped(RING_OF_THE_GODS_I_EA)
+			|| hasItemEquipped(PRAYER_CAPE)
+			|| hasItemEquipped(PRAYER_CAPE_T);
 	}
 
 	// ------------------------------------------------------------------
 	// Item presence helpers
 	// ------------------------------------------------------------------
 
-	private boolean hasItemInInventory(int targetId)
-	{
-		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-		if (inventory == null)
-		{
-			return false;
-		}
-		for (Item item : inventory.getItems())
-		{
-			if (item.getId() == targetId)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
+	@SuppressWarnings("deprecation")
 	private boolean hasItemEquipped(int targetId)
 	{
 		ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
@@ -304,6 +299,7 @@ public class InventoryRestorePlugin extends Plugin
 	// Config provider
 	// ------------------------------------------------------------------
 
+	@SuppressWarnings("unused")
 	@Provides
 	InventoryRestoreConfig provideConfig(ConfigManager configManager)
 	{
