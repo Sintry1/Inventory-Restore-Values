@@ -66,7 +66,7 @@ Prayer mix, Super restore mix, Zamorak mix
 Anchovies, Shrimps, Sardine, Herring, Mackerel, Giant carp, Trout, Cod, Pike, Salmon, Tuna, Lobster, Bass, Swordfish, Monkfish, Karambwan, Shark, Sea turtle, Manta ray, Dark crab, and more including Barbarian fishing catches (Roe, Caviar) and cave-dwelling fish
 
 ### Hunter Meats (Two-part Healing)
-Wild kebbit, Barb-tailed kebbit, Dashing kebbit, Pyre fox, Sunlight antelope, Moonlight antelope, Larupia, Graahk, Kyatt
+Wild kebbit, Larupia, Barb-tailed kebbit, Graahk, Kyatt, Pyre fox, Sunlight antelope, Dashing kebbit, Moonlight antelope
 
 ### Dynamic HP Food
 Anglerfish and Saradomin brew — values are calculated from your current Hitpoints level
@@ -75,7 +75,10 @@ Anglerfish and Saradomin brew — values are calculated from your current Hitpoi
 Meats, breads, fruit and vegetables, baked potatoes, cakes, pizzas, pies, gnome cooking (crunchies, battas, bowls, cocktails), stews, soups, ales, wines, and a wide range of other food items
 
 ### Varlamore
-Giant krill, Jumbo squid, Swordtip squid, Haddock (dynamic formula), Yellowfin, Halibut, Bluefin, Marlin, and Varlamore wines
+Varlamore wines
+
+### Sailing
+Giant krill, Jumbo squid, Swordtip squid, Haddock (dynamic formula), Yellowfin, Halibut, Bluefin, Marlin, and
 
 ### Chambers of Xeric
 Xeric's aid (−/regular/+), Revitalisation potion (−/regular/+), Prayer enhance (−/regular/+)
