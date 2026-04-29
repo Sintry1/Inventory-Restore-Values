@@ -172,6 +172,15 @@ public final class RestoreItemDatabase
 		put(5004,  RestoreItem.food(4));  // Giant frogspawn (heals 3–6; representative 4)
 
 		// ==================================================================
+		// BLIGHTED FOOD — Wilderness-only items from Bounty Hunter shop
+		// Identical heal values to their regular counterparts.
+		// ==================================================================
+
+		put(24589, RestoreItem.food(22));                               // Blighted manta ray
+		put(24592, RestoreItem.dynamicFood(DynamicHpType.ANGLERFISH));  // Blighted anglerfish
+		put(24595, RestoreItem.food(18));                               // Blighted karambwan
+
+		// ==================================================================
 		// FISH — Tai Bwo Wannai & special
 		// ==================================================================
 
