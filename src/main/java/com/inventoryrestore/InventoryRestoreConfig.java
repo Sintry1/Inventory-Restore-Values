@@ -34,7 +34,7 @@ public interface InventoryRestoreConfig extends Config
 	@Range(min = 8, max = 24)
 	default int overlayFontSize()
 	{
-		return 11;
+		return 16;
 	}
 
 	@ConfigItem(
@@ -136,27 +136,18 @@ public interface InventoryRestoreConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "firstHpItemOnly",
-		name = "First Item Only",
-		description = "Only show the HP overlay on the first HP-restoring item of each type in the inventory (left to right, top to bottom)",
+		keyName = "hpDisplayFilter",
+		name = "HP Item Filter",
+		description = "<html>Controls which HP-restoring items show an overlay.<br>"
+			+ "<b>All Items</b>: label every qualifying item.<br>"
+			+ "<b>First Item Only</b>: label only the first of each HP food type.<br>"
+			+ "<b>Last Item Only</b>: label only the last of each HP food type.</html>",
 		section = foodSection,
 		position = 4
 	)
-	default boolean firstHpItemOnly()
+	default ItemDisplayFilter hpDisplayFilter()
 	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "lastHpItemOnly",
-		name = "Last Item Only",
-		description = "Only show the HP overlay on the last HP-restoring item of each type in the inventory (left to right, top to bottom)",
-		section = foodSection,
-		position = 5
-	)
-	default boolean lastHpItemOnly()
-	{
-		return false;
+		return ItemDisplayFilter.ALL;
 	}
 
 	// -------------------------------------------------------------------------
@@ -183,26 +174,17 @@ public interface InventoryRestoreConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "firstPrayerItemOnly",
-		name = "First Item Only",
-		description = "Only show the prayer overlay on the first prayer-restoring item of each type in the inventory (left to right, top to bottom)",
+		keyName = "prayerDisplayFilter",
+		name = "Prayer Item Filter",
+		description = "<html>Controls which prayer-restoring items show an overlay.<br>"
+			+ "<b>All Items</b>: label every qualifying item.<br>"
+			+ "<b>First Item Only</b>: label only the first of each prayer potion type.<br>"
+			+ "<b>Last Item Only</b>: label only the last of each prayer potion type.</html>",
 		section = prayerSection,
 		position = 1
 	)
-	default boolean firstPrayerItemOnly()
+	default ItemDisplayFilter prayerDisplayFilter()
 	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "lastPrayerItemOnly",
-		name = "Last Item Only",
-		description = "Only show the prayer overlay on the last prayer-restoring item of each type in the inventory (left to right, top to bottom)",
-		section = prayerSection,
-		position = 2
-	)
-	default boolean lastPrayerItemOnly()
-	{
-		return false;
+		return ItemDisplayFilter.ALL;
 	}
 }

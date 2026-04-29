@@ -62,18 +62,18 @@ public class InventoryRestoreOverlay extends Overlay
 			return null;
 		}
 
-		Font font = FontManager.getRunescapeSmallFont();
-		if (config.overlayFontSize() != 11)
-		{
-			font = font.deriveFont((float) config.overlayFontSize());
-		}
+		Font font = FontManager.getRunescapeSmallFont().deriveFont((float) config.overlayFontSize());
 		graphics.setFont(font);
 		FontMetrics fm = graphics.getFontMetrics();
 
-		// Pre-scan for last-item-only mode: find the last widget index for each group ID
+		final ItemDisplayFilter hpFilter = config.hpDisplayFilter();
+		final ItemDisplayFilter prayerFilter = config.prayerDisplayFilter();
+
+		// Pre-scan: find the last index per group for LAST_ONLY filters.
 		final Map<Integer, Integer> lastHpIndex = new HashMap<>();
 		final Map<Integer, Integer> lastPrayerIndex = new HashMap<>();
-		if (config.lastHpItemOnly() || config.lastPrayerItemOnly())
+
+		if (hpFilter == ItemDisplayFilter.LAST_ONLY || prayerFilter == ItemDisplayFilter.LAST_ONLY)
 		{
 			for (int i = 0; i < children.length; i++)
 			{
@@ -92,20 +92,20 @@ public class InventoryRestoreOverlay extends Overlay
 					continue;
 				}
 				int groupId = RestoreItemDatabase.getGroupId(item.getItemId());
-				if (config.showHpOverlay() && config.lastHpItemOnly() && restoreItem.hasInstantHp())
+				if (config.showHpOverlay() && restoreItem.hasInstantHp() && hpFilter == ItemDisplayFilter.LAST_ONLY)
 				{
 					lastHpIndex.put(groupId, i);
 				}
-				if (config.showPrayerOverlay() && config.lastPrayerItemOnly() && restoreItem.hasPrayerRestore())
+				if (config.showPrayerOverlay() && restoreItem.hasPrayerRestore() && prayerFilter == ItemDisplayFilter.LAST_ONLY)
 				{
 					lastPrayerIndex.put(groupId, i);
 				}
 			}
 		}
 
-		// Tracks item IDs already rendered in first-item-only mode
-		final Set<Integer> seenHpItems = new HashSet<>();
-		final Set<Integer> seenPrayerItems = new HashSet<>();
+		// Per-type seen-sets for FIRST_ONLY filter.
+		final Set<Integer> seenHpGroups = new HashSet<>();
+		final Set<Integer> seenPrayerGroups = new HashSet<>();
 
 		for (int i = 0; i < children.length; i++)
 		{
@@ -127,42 +127,58 @@ public class InventoryRestoreOverlay extends Overlay
 				continue;
 			}
 
-			boolean showHp = config.showHpOverlay();
-			boolean showPrayer = config.showPrayerOverlay();
+			// Gate flags by whether the item actually carries the relevant restore, so that
+			// items without HP/prayer cannot consume a FIRST/LAST slot meant for qualifying items.
+			boolean showHp = config.showHpOverlay() && restoreItem.hasInstantHp();
+			boolean showPrayer = config.showPrayerOverlay() && restoreItem.hasPrayerRestore();
 
-			if (showHp || showPrayer)
+			if (!showHp && !showPrayer)
 			{
-				int groupId = -1; // lazily resolved below
+				continue;
+			}
 
-				if (config.firstHpItemOnly() && showHp)
-				{
-					groupId = RestoreItemDatabase.getGroupId(item.getItemId());
-					showHp = seenHpItems.add(groupId);
-				}
-				if (config.firstPrayerItemOnly() && showPrayer)
-				{
-					if (groupId == -1)
-					{
-						groupId = RestoreItemDatabase.getGroupId(item.getItemId());
-					}
-					showPrayer = seenPrayerItems.add(groupId);
-				}
+			int groupId = -1; // lazily resolved
 
-				if (config.lastHpItemOnly() && showHp)
+			if (showHp)
+			{
+				switch (hpFilter)
 				{
-					if (groupId == -1)
-					{
+					case FIRST_ONLY:
 						groupId = RestoreItemDatabase.getGroupId(item.getItemId());
-					}
-					showHp = lastHpIndex.getOrDefault(groupId, -1) == i;
+						showHp = seenHpGroups.add(groupId);
+						break;
+					case LAST_ONLY:
+						if (groupId == -1)
+						{
+							groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+						}
+						showHp = lastHpIndex.getOrDefault(groupId, -1) == i;
+						break;
+					default:
+						break;
 				}
-				if (config.lastPrayerItemOnly() && showPrayer)
+			}
+
+			if (showPrayer)
+			{
+				switch (prayerFilter)
 				{
-					if (groupId == -1)
-					{
-						groupId = RestoreItemDatabase.getGroupId(item.getItemId());
-					}
-					showPrayer = lastPrayerIndex.getOrDefault(groupId, -1) == i;
+					case FIRST_ONLY:
+						if (groupId == -1)
+						{
+							groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+						}
+						showPrayer = seenPrayerGroups.add(groupId);
+						break;
+					case LAST_ONLY:
+						if (groupId == -1)
+						{
+							groupId = RestoreItemDatabase.getGroupId(item.getItemId());
+						}
+						showPrayer = lastPrayerIndex.getOrDefault(groupId, -1) == i;
+						break;
+					default:
+						break;
 				}
 			}
 
