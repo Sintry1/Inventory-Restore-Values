@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Skill;
+import net.runelite.api.WorldType;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.FontManager;
@@ -68,6 +69,7 @@ public class InventoryRestoreOverlay extends Overlay
 
 		final ItemDisplayFilter hpFilter = config.hpDisplayFilter();
 		final ItemDisplayFilter prayerFilter = config.prayerDisplayFilter();
+		final boolean isF2pWorld = !client.getWorldType().contains(WorldType.MEMBERS);
 
 		// Pre-scan: find the last index per group for LAST_ONLY filters.
 		final Map<Integer, Integer> lastHpIndex = new HashMap<>();
@@ -88,6 +90,10 @@ public class InventoryRestoreOverlay extends Overlay
 				}
 				RestoreItem restoreItem = RestoreItemDatabase.get(item.getItemId());
 				if (restoreItem == null)
+				{
+					continue;
+				}
+				if (isF2pWorld && itemManager.getItemComposition(item.getItemId()).isMembers())
 				{
 					continue;
 				}
@@ -123,6 +129,11 @@ public class InventoryRestoreOverlay extends Overlay
 
 			RestoreItem restoreItem = RestoreItemDatabase.get(item.getItemId());
 			if (restoreItem == null)
+			{
+				continue;
+			}
+
+			if (isF2pWorld && itemManager.getItemComposition(item.getItemId()).isMembers())
 			{
 				continue;
 			}
