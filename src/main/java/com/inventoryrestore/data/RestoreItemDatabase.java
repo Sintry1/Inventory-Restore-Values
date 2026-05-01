@@ -631,6 +631,24 @@ public final class RestoreItemDatabase
 		put(29421, RestoreItem.food(5)); // Sun-shine
 
 		// ==================================================================
+		// THE GAUNTLET & CORRUPTED GAUNTLET
+		// ==================================================================
+
+		// Paddlefish — heals 20 HP (regular Gauntlet, sourced from RuneLite itemstats)
+		put(23874, RestoreItem.food(20)); // Paddlefish
+
+		// Combo food variants — heals 16 HP (Gauntlet / Corrupted Gauntlet variants)
+		put(25960, RestoreItem.food(16)); // Crystal paddlefish (Gauntlet)
+		put(25958, RestoreItem.food(16)); // Corrupted paddlefish (Corrupted Gauntlet)
+
+		// Egniol potion — prayer: floor(prayer * 25/100) + 7 (Prayer Potion formula)
+		// Also restores 40 run energy per dose; run energy not tracked here.
+		put(23885, RestoreItem.prayer(PrayerRestoreType.PRAYER_POTION)); // Egniol potion(4)
+		put(23884, RestoreItem.prayer(PrayerRestoreType.PRAYER_POTION)); // Egniol potion(3)
+		put(23883, RestoreItem.prayer(PrayerRestoreType.PRAYER_POTION)); // Egniol potion(2)
+		put(23882, RestoreItem.prayer(PrayerRestoreType.PRAYER_POTION)); // Egniol potion(1)
+
+		// ==================================================================
 		// ITEM GROUPS — maps partial/half variants to the full item's ID
 		// so that first-item-only mode treats them as the same food type.
 		// ==================================================================
@@ -814,6 +832,11 @@ public final class RestoreItemDatabase
 		GROUP_IDS.put(29081, 29080); // Moonlight potion(3) → (4)
 		GROUP_IDS.put(29082, 29080); // Moonlight potion(2) → (4)
 		GROUP_IDS.put(29083, 29080); // Moonlight potion(1) → (4)
+
+		// Egniol potion doses  [4-dose = 23885 is canonical]
+		GROUP_IDS.put(23882, 23885); // Egniol potion(1) → (4)
+		GROUP_IDS.put(23883, 23885); // Egniol potion(2) → (4)
+		GROUP_IDS.put(23884, 23885); // Egniol potion(3) → (4)
 	}
 
 	private static void put(int itemId, RestoreItem item)
