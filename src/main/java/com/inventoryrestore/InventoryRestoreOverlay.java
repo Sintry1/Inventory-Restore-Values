@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Skill;
@@ -213,36 +214,32 @@ public class InventoryRestoreOverlay extends Overlay
 		// --- HP text ---
 		if (showHp && restoreItem.hasInstantHp())
 		{
-			int hp = computeHp(restoreItem);
-
-			if (!config.enableMinHpThreshold() || hp >= config.minHpThreshold())
+			if (restoreItem.isFullRestore())
 			{
-				if (restoreItem.hasDelayedHeal())
-				{
-					if (config.showCombinedHeal())
-					{
-						hpText = String.valueOf(hp + restoreItem.getDelayedHp());
-					}
-					else
-					{
-						// Two-part food (hunter meats): show "instant/delayed"
-						hpText = hp + "/" + restoreItem.getDelayedHp();
-					}
-				}
-				else
-				{
-					hpText = String.valueOf(hp);
-				}
+				// Full-restore items (Jar of congealed blood) restore up to the player's
+				// base level, so show the real Hitpoints level (not the boosted value)
+				hpText = String.valueOf(client.getRealSkillLevel(Skill.HITPOINTS));
+			}
+			else
+			{
+				hpText = buildHpText(restoreItem);
 			}
 		}
 
 		// --- Prayer text ---
 		if (showPrayer && restoreItem.hasPrayerRestore())
 		{
-			if (restoreItem.isPrayerRegen())
+			if (restoreItem.isFullRestore())
 			{
-				// Prayer Regen Potion: show restore amount / tick interval
-				prayerText = "1/12t";
+				// Full-restore items: show the player's real Prayer level
+				prayerText = String.valueOf(client.getRealSkillLevel(Skill.PRAYER));
+			}
+			else if (restoreItem.isPrayerRegen())
+			{
+				// Regen-over-time items: show restore amount / tick interval
+				// (e.g. "1/12t" for Prayer regen potion, "8/6t" for Dull ancient medal)
+				prayerText = restoreItem.getPrayerRegenAmount() + "/"
+					+ restoreItem.getPrayerRegenTicks() + "t";
 			}
 			else if (restoreItem.getPrayerRestoreType() != null)
 			{
@@ -287,6 +284,29 @@ public class InventoryRestoreOverlay extends Overlay
 		}
 	}
 
+	/** Builds the HP overlay text for standard (non-full-restore) food, or null if under the threshold. */
+	@Nullable
+	private String buildHpText(RestoreItem restoreItem)
+	{
+		int hp = computeHp(restoreItem);
+
+		if (config.enableMinHpThreshold() && hp < config.minHpThreshold())
+		{
+			return null;
+		}
+
+		if (restoreItem.hasDelayedHeal())
+		{
+			if (config.showCombinedHeal())
+			{
+				return String.valueOf(hp + restoreItem.getDelayedHp());
+			}
+			// Two-part food (hunter meats): show "instant/delayed"
+			return hp + "/" + restoreItem.getDelayedHp();
+		}
+		return String.valueOf(hp);
+	}
+
 	/**
 	 * Returns {@link Color#RED} if consuming the item would exceed the effective HP cap,
 	 * otherwise returns the configured HP colour.
@@ -297,7 +317,8 @@ public class InventoryRestoreOverlay extends Overlay
 	 */
 	private Color resolveHpColor(RestoreItem restoreItem)
 	{
-		if (!restoreItem.hasInstantHp())
+		// Full-restore items heal to max exactly, so they can never overheal
+		if (!restoreItem.hasInstantHp() || restoreItem.isFullRestore())
 		{
 			return config.hpColor();
 		}
@@ -325,7 +346,8 @@ public class InventoryRestoreOverlay extends Overlay
 	 */
 	private Color resolvePrayerColor(RestoreItem restoreItem)
 	{
-		if (!restoreItem.hasPrayerRestore() || restoreItem.isPrayerRegen())
+		if (!restoreItem.hasPrayerRestore() || restoreItem.isPrayerRegen()
+			|| restoreItem.isFullRestore())
 		{
 			return config.prayerColor();
 		}
@@ -549,6 +571,10 @@ public class InventoryRestoreOverlay extends Overlay
 			case TEARS_OF_ELIDINIS:
 				// Tears of Elidinis — sourced from RuneLite itemstats: perc(.25, 10)
 				return prayer * (bonus ? 27 : 25) / 100 + 10;
+			case FOUL_CHUNKY:
+				// Foul chunky potion — same base formula as Super restore but
+				// NOT affected by the Holy Wrench / Ring of the Gods (i) bonus
+				return prayer * 25 / 100 + 8;
 			case MOONLIGHT_POTION:
 			{
 				// Moonlight Potion — sourced from RuneLite itemstats (MoonlightPotion.java)

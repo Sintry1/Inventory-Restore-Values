@@ -649,6 +649,50 @@ public final class RestoreItemDatabase
 		put(23882, RestoreItem.prayer(PrayerRestoreType.PRAYER_POTION)); // Egniol potion(1)
 
 		// ==================================================================
+		// THE BLOOD MOON RISES — VAMPYRIUM
+		// Quest-realm consumables (untradeable, unbankable, only consumable
+		// inside Vampyrium). All values sourced from the OSRS wiki.
+		// ==================================================================
+
+		// Foul chunky potion — restores all lowered stats and prayer per dose:
+		// floor(prayer * 25/100) + 8 (same base formula as Super restore, but NOT
+		// boosted by Holy Wrench / Ring of the Gods (i)), then regenerates 1 prayer
+		// every 12 ticks for 8 min (66 total per dose), like a Prayer regen potion.
+		RestoreItem foulChunky = RestoreItem.builder()
+			.prayerRestoreType(PrayerRestoreType.FOUL_CHUNKY)
+			.prayerRegenAmount(1)
+			.prayerRegenTicks(12)
+			.prayerRegenDuration(792)
+			.build();
+		put(33807, foulChunky); // Foul chunky potion(4)
+		put(33808, foulChunky); // Foul chunky potion(3)
+		put(33809, foulChunky); // Foul chunky potion(2)
+		put(33810, foulChunky); // Foul chunky potion(1)
+
+		// Rancid slimy potion — heals floor(hp * 15/100) + 2 per dose with overheal,
+		// identical to Saradomin brew. Also boosts Defence floor(def/5) + 2 and drains
+		// 1 Attack/Strength/Magic/Ranged per dose; side effects not shown.
+		put(33811, RestoreItem.dynamicFood(DynamicHpType.SARADOMIN_BREW)); // Rancid slimy potion(4)
+		put(33812, RestoreItem.dynamicFood(DynamicHpType.SARADOMIN_BREW)); // Rancid slimy potion(3)
+		put(33813, RestoreItem.dynamicFood(DynamicHpType.SARADOMIN_BREW)); // Rancid slimy potion(2)
+		put(33814, RestoreItem.dynamicFood(DynamicHpType.SARADOMIN_BREW)); // Rancid slimy potion(1)
+
+		// Vampyrium food — flat heals. Stymphike tartare also applies 1 poison damage
+		// on consumption (not shown); tartare and kebab are "fast food" (reduced delay).
+		put(33628, RestoreItem.food(26)); // Stymphike tartare
+		put(33802, RestoreItem.food(22)); // Mysterious jerky
+		put(33820, RestoreItem.food(18)); // Smelly kebab
+
+		// Jar of congealed blood — fully restores Hitpoints and Prayer.
+		// Overlay shows the player's real HP/prayer levels instead of a fixed value.
+		put(33819, RestoreItem.fullRestore()); // Jar of congealed blood
+
+		// Dull ancient medal — "Polish" in Vampyrium: restores 8 prayer every 6 ticks
+		// for 120 ticks (160 prayer total). May also grant combat boosts (not shown).
+		// Overlay shows "8/6t"; infobox tracks the countdown like the Prayer regen potion.
+		put(33627, RestoreItem.prayerRegen(8, 6, 120)); // Dull ancient medal
+
+		// ==================================================================
 		// ITEM GROUPS — maps partial/half variants to the full item's ID
 		// so that first-item-only mode treats them as the same food type.
 		// ==================================================================
@@ -837,6 +881,16 @@ public final class RestoreItemDatabase
 		GROUP_IDS.put(23882, 23885); // Egniol potion(1) → (4)
 		GROUP_IDS.put(23883, 23885); // Egniol potion(2) → (4)
 		GROUP_IDS.put(23884, 23885); // Egniol potion(3) → (4)
+
+		// Foul chunky potion doses  [4-dose = 33807 is canonical]
+		GROUP_IDS.put(33808, 33807); // Foul chunky potion(3) → (4)
+		GROUP_IDS.put(33809, 33807); // Foul chunky potion(2) → (4)
+		GROUP_IDS.put(33810, 33807); // Foul chunky potion(1) → (4)
+
+		// Rancid slimy potion doses  [4-dose = 33811 is canonical]
+		GROUP_IDS.put(33812, 33811); // Rancid slimy potion(3) → (4)
+		GROUP_IDS.put(33813, 33811); // Rancid slimy potion(2) → (4)
+		GROUP_IDS.put(33814, 33811); // Rancid slimy potion(1) → (4)
 	}
 
 	private static void put(int itemId, RestoreItem item)

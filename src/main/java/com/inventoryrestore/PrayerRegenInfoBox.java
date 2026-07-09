@@ -1,26 +1,35 @@
 package com.inventoryrestore;
 
+import com.inventoryrestore.data.RestoreItem;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 
 /**
- * Infobox shown while a Prayer regeneration potion effect is active.
- * Displays a countdown to the next +1 prayer tick.
+ * Infobox shown while a prayer-regeneration-over-time effect is active.
+ * Displays a countdown to the next prayer restore tick.
  *
- * <p>The prayer regeneration potion restores 1 prayer point every 12 game ticks
- * (7.2 seconds), for a total of 66 prayer per dose (792 ticks total duration).
+ * <p>The regen parameters come from the consumed item:
+ * <ul>
+ *   <li>Prayer regeneration potion / Prayer enhance: 1 prayer every 12 ticks,
+ *       792 ticks per dose (66 prayer total)</li>
+ *   <li>Foul chunky potion: same regen as the Prayer regeneration potion</li>
+ *   <li>Dull ancient medal: 8 prayer every 6 ticks for 120 ticks (160 prayer total)</li>
+ * </ul>
  */
 public class PrayerRegenInfoBox extends InfoBox
 {
-	/** Ticks between each +1 prayer restore. */
-	private static final int TICKS_PER_RESTORE = 12;
+	/** Prayer points restored each interval. */
+	private final int restoreAmount;
 
-	/** Total ticks one dose lasts (66 restores × 12 ticks). */
-	public static final int TICKS_PER_DOSE = 792;
+	/** Ticks between each prayer restore. */
+	private final int ticksPerRestore;
 
-	/** Ticks until the next prayer point fires. Counts down from 12 to 0. */
+	/** Total ticks one dose lasts. */
+	private final int ticksPerDose;
+
+	/** Ticks until the next prayer restore fires. */
 	private int ticksUntilNext;
 
 	/** Total ticks remaining for the entire effect. */
@@ -28,12 +37,27 @@ public class PrayerRegenInfoBox extends InfoBox
 
 	private final InventoryRestoreConfig config;
 
-	public PrayerRegenInfoBox(BufferedImage image, Plugin plugin, InventoryRestoreConfig config)
+	public PrayerRegenInfoBox(BufferedImage image, Plugin plugin, InventoryRestoreConfig config,
+		int restoreAmount, int ticksPerRestore, int ticksPerDose)
 	{
 		super(image, plugin);
-		this.ticksUntilNext = TICKS_PER_RESTORE;
-		this.totalTicksRemaining = TICKS_PER_DOSE;
+		this.restoreAmount = restoreAmount;
+		this.ticksPerRestore = ticksPerRestore;
+		this.ticksPerDose = ticksPerDose;
+		this.ticksUntilNext = ticksPerRestore;
+		this.totalTicksRemaining = ticksPerDose;
 		this.config = config;
+	}
+
+	/**
+	 * True if this infobox is tracking the same regen effect as the given item,
+	 * so a repeat consumption can extend the timer rather than replace it.
+	 */
+	public boolean matches(RestoreItem item)
+	{
+		return item.getPrayerRegenAmount() == restoreAmount
+			&& item.getPrayerRegenTicks() == ticksPerRestore
+			&& item.getPrayerRegenDuration() == ticksPerDose;
 	}
 
 	/**
@@ -42,7 +66,7 @@ public class PrayerRegenInfoBox extends InfoBox
 	 */
 	public void addDose()
 	{
-		totalTicksRemaining += TICKS_PER_DOSE;
+		totalTicksRemaining += ticksPerDose;
 	}
 
 	/** Called every game tick. */
@@ -58,7 +82,7 @@ public class PrayerRegenInfoBox extends InfoBox
 		}
 		if (ticksUntilNext <= 0)
 		{
-			ticksUntilNext = TICKS_PER_RESTORE;
+			ticksUntilNext = ticksPerRestore;
 		}
 	}
 
@@ -70,7 +94,7 @@ public class PrayerRegenInfoBox extends InfoBox
 	/** Prayer points still to be restored for the remaining duration. */
 	public int getPrayerRemaining()
 	{
-		return (int) Math.ceil(totalTicksRemaining / (double) TICKS_PER_RESTORE);
+		return (int) Math.ceil(totalTicksRemaining / (double) ticksPerRestore) * restoreAmount;
 	}
 
 	@Override
@@ -90,6 +114,7 @@ public class PrayerRegenInfoBox extends InfoBox
 	public String getTooltip()
 	{
 		double seconds = ticksUntilNext * 0.6;
-		return String.format("+1 Prayer in %.1fs | ~%d prayer remaining", seconds, getPrayerRemaining());
+		return String.format("+%d Prayer in %.1fs | ~%d prayer remaining",
+			restoreAmount, seconds, getPrayerRemaining());
 	}
 }

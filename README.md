@@ -13,7 +13,7 @@ A RuneLite plugin that displays HP and prayer restore amounts directly on invent
 ### Prayer Overlay
 - Shows the prayer restore value on potions in your chosen colour (blue by default), calculated from your real prayer level
 - **Bonus detection** — automatically applies the correct bonus multiplier when you have a Holy Wrench in your inventory, or a Ring of the Gods (i) or Prayer cape worn
-- **Prayer Regeneration Potion** — shows `1/12t` on the overlay and an infobox tracking the countdown to the next prayer tick after consumption
+- **Prayer regen over time** — the Prayer Regeneration Potion shows `1/12t` and the Dull Ancient Medal shows `8/6t` (restore amount / tick interval) on the overlay, with an infobox tracking the countdown to the next prayer tick after consumption; the Foul chunky potion starts the same infobox alongside its instant restore
 - **Overspill indicator** — the value turns red when consuming the item would exceed your max prayer
 
 ### Filtering
@@ -78,7 +78,7 @@ Meats, breads, fruit and vegetables, baked potatoes, cakes, pizzas, pies, gnome 
 Varlamore wines
 
 ### Sailing
-Giant krill, Jumbo squid, Swordtip squid, Haddock (dynamic formula), Yellowfin, Halibut, Bluefin, Marlin, and
+Giant krill, Jumbo squid, Swordtip squid, Haddock (dynamic formula), Yellowfin, Halibut, Bluefin, Marlin
 
 ### Chambers of Xeric
 Xeric's aid (−/regular/+), Revitalisation potion (−/regular/+), Prayer enhance (−/regular/+)
@@ -88,3 +88,13 @@ Nectar, Tears of Elidinis, Honey locust
 
 ### Moons of Peril
 Moonlight potion, Moonlight Moth jar, Moonlight Moth Mix, Cooked bream (dynamic), Cooked moss lizard (dynamic), Eclipse red, Moon-lite, Sun-shine
+
+### The Gauntlet
+Paddlefish, Crystal paddlefish, Corrupted paddlefish, Egniol potion
+
+### The Blood Moon Rises (Vampyrium)
+- **Foul chunky potion** — prayer restore calculated from your prayer level (super restore formula), plus a prayer-regen infobox after drinking
+- **Rancid slimy potion** — dynamic HP heal with overheal (Saradomin brew formula)
+- **Stymphike tartare** (26), **Mysterious jerky** (22), **Smelly kebab** (18)
+- **Jar of congealed blood** — fully restores HP and Prayer; the overlay shows your Hitpoints and Prayer levels
+- **Dull ancient medal** — polishing restores 8 prayer every 6 ticks for 72 s; shows `8/6t` with an infobox countdown

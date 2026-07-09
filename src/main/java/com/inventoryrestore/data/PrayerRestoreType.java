@@ -52,5 +52,15 @@ public enum PrayerRestoreType
 	 * Requires Herblore level 38. NOT boosted by Holy Wrench / Ring of the Gods (i).
 	 * Formula sourced from RuneLite itemstats (MoonlightPotion.java).
 	 */
-	MOONLIGHT_POTION
+	MOONLIGHT_POTION,
+
+	// ------------------------------------------------------------------
+	// The Blood Moon Rises — Vampyrium
+	// ------------------------------------------------------------------
+
+	/**
+	 * Foul chunky potion: floor(prayer * 0.25) + 8 (same base formula as Super
+	 * restore), NOT boosted by wrench/ring. Formula sourced from the OSRS wiki.
+	 */
+	FOUL_CHUNKY
 }

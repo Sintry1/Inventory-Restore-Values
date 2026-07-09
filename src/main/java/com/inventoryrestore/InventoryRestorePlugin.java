@@ -111,8 +111,10 @@ public class InventoryRestorePlugin extends Plugin
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		String option = event.getMenuOption();
-		if ("Eat".equalsIgnoreCase(option) || "Drink".equalsIgnoreCase(option))
+		if ("Eat".equalsIgnoreCase(option) || "Drink".equalsIgnoreCase(option)
+			|| "Polish".equalsIgnoreCase(option))
 		{
+			// "Polish" is the Dull ancient medal's consume option (Vampyrium)
 			pendingConsumptionId = event.getItemId();
 		}
 	}
@@ -146,16 +148,17 @@ public class InventoryRestorePlugin extends Plugin
 			startDelayedHealTimer(consumedId, item);
 		}
 
-		// Prayer regeneration potion
-		if (item.isPrayerRegen())
+		// Prayer regen over time (Prayer regen potion, Foul chunky potion, Dull ancient medal)
+		if (item.hasPrayerRegenEffect())
 		{
-			if (prayerRegenInfoBox != null && !prayerRegenInfoBox.isExpired())
+			if (prayerRegenInfoBox != null && !prayerRegenInfoBox.isExpired()
+				&& prayerRegenInfoBox.matches(item))
 			{
 				prayerRegenInfoBox.addDose();
 			}
 			else
 			{
-				startPrayerRegenTimer(consumedId);
+				startPrayerRegenTimer(consumedId, item);
 			}
 		}
 	}
@@ -182,11 +185,12 @@ public class InventoryRestorePlugin extends Plugin
 		infoBoxManager.addInfoBox(delayedHealInfoBox);
 	}
 
-	private void startPrayerRegenTimer(int itemId)
+	private void startPrayerRegenTimer(int itemId, RestoreItem item)
 	{
 		removePrayerRegenInfoBox();
 		BufferedImage image = itemManager.getImage(itemId);
-		prayerRegenInfoBox = new PrayerRegenInfoBox(image, this, config);
+		prayerRegenInfoBox = new PrayerRegenInfoBox(image, this, config,
+			item.getPrayerRegenAmount(), item.getPrayerRegenTicks(), item.getPrayerRegenDuration());
 		infoBoxManager.addInfoBox(prayerRegenInfoBox);
 	}
 

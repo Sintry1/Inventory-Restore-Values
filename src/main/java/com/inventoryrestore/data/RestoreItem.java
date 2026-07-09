@@ -41,6 +41,22 @@ public class RestoreItem
 	 */
 	int flatPrayerRestore;
 
+	/** Prayer points restored per regen interval (0 = no over-time effect). */
+	int prayerRegenAmount;
+
+	/** Ticks between each regen restore (only relevant when {@code prayerRegenAmount > 0}). */
+	int prayerRegenTicks;
+
+	/** Total ticks the regen effect lasts per dose (only relevant when {@code prayerRegenAmount > 0}). */
+	int prayerRegenDuration;
+
+	/**
+	 * True for items that fully restore both Hitpoints and Prayer
+	 * (e.g. Jar of congealed blood). The overlay shows the player's real
+	 * HP/prayer levels instead of a fixed restore amount.
+	 */
+	boolean fullRestore;
+
 	// ------------------------------------------------------------------
 	// Convenience factories
 	// ------------------------------------------------------------------
@@ -73,10 +89,31 @@ public class RestoreItem
 		return RestoreItem.builder().prayerRestoreType(type).build();
 	}
 
-	/** Prayer regeneration potion (special over-time behaviour). */
+	/** Prayer regeneration potion (special over-time behaviour): 1 prayer every 12 ticks, 792 ticks per dose. */
 	public static RestoreItem prayerRegen()
 	{
-		return RestoreItem.builder().prayerRestoreType(PrayerRestoreType.PRAYER_REGEN).build();
+		return prayerRegen(1, 12, 792);
+	}
+
+	/**
+	 * Item whose only effect is prayer regeneration over time
+	 * (e.g. Dull ancient medal: 8 prayer every 6 ticks for 120 ticks).
+	 * The overlay shows "amount/intervalTicks t"; an infobox tracks the countdown.
+	 */
+	public static RestoreItem prayerRegen(int amount, int intervalTicks, int durationTicks)
+	{
+		return RestoreItem.builder()
+			.prayerRestoreType(PrayerRestoreType.PRAYER_REGEN)
+			.prayerRegenAmount(amount)
+			.prayerRegenTicks(intervalTicks)
+			.prayerRegenDuration(durationTicks)
+			.build();
+	}
+
+	/** Item that fully restores both Hitpoints and Prayer (e.g. Jar of congealed blood). */
+	public static RestoreItem fullRestore()
+	{
+		return RestoreItem.builder().fullRestore(true).build();
 	}
 
 	/**
@@ -106,7 +143,7 @@ public class RestoreItem
 
 	public boolean hasInstantHp()
 	{
-		return instantHp > 0 || dynamicHpType != null;
+		return instantHp > 0 || dynamicHpType != null || fullRestore;
 	}
 
 	public boolean hasDelayedHeal()
@@ -116,11 +153,21 @@ public class RestoreItem
 
 	public boolean hasPrayerRestore()
 	{
-		return prayerRestoreType != null || flatPrayerRestore > 0;
+		return prayerRestoreType != null || flatPrayerRestore > 0 || fullRestore;
 	}
 
 	public boolean isPrayerRegen()
 	{
 		return prayerRestoreType == PrayerRestoreType.PRAYER_REGEN;
+	}
+
+	/**
+	 * True if consuming this item starts a prayer-regeneration-over-time effect.
+	 * Covers pure regen items (Prayer regeneration potion, Dull ancient medal) as
+	 * well as items that combine an instant restore with regen (Foul chunky potion).
+	 */
+	public boolean hasPrayerRegenEffect()
+	{
+		return prayerRegenAmount > 0;
 	}
 }
